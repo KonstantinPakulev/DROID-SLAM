@@ -1,3 +1,4 @@
+# noinspection PyInterpreter
 import sys
 
 sys.path.append('..')
@@ -38,12 +39,10 @@ def read_associations(path):
     return associations
 
 
-def image_stream(args, use_depth=False, stride=1):
+def image_stream(associations, use_depth=False):
     """ image generator """
     cam_params = np.load(os.path.join(args.datapath, 'camera_params.npy')).astype(np.float32)
     fx, fy, cx, cy = cam_params[0, 0], cam_params[1, 1], cam_params[0, 2], cam_params[1, 2]
-
-    associations = read_associations(os.path.join(args.datapath, args.association_file))
 
     for t, (image_path, depth_path) in enumerate(associations):
         image = cv2.imread(os.path.join(args.datapath, image_path))
@@ -109,7 +108,9 @@ if __name__ == '__main__':
     # set to 2 for test scenes
     stride = 1
 
-    for (t, image, depth, intrinsics) in tqdm(image_stream(args, use_depth=True, stride=stride)):
+    associations = read_associations(os.path.join(args.datapath, args.association_file))[::stride]
+
+    for (t, image, depth, intrinsics) in tqdm(image_stream(associations, use_depth=True)):
         if not args.disable_vis:
             show_image(image[0])
 
@@ -119,19 +120,16 @@ if __name__ == '__main__':
 
         droid.track(t, image, depth, intrinsics=intrinsics)
 
-    traj_est = droid.terminate(image_stream(args, use_depth=False, stride=stride))
+    traj_est = droid.terminate(image_stream(associations, use_depth=False))
 
     if args.output_file is not None:
         from evo.tools import file_interface
         from evo.core.trajectory import PoseTrajectory3D
-
-        image_path = os.path.join(args.datapath, 'color')
-        images_list = sorted(glob.glob(os.path.join(image_path, '*.png')))[::stride]
-        tstamps = [float(x.split('/')[-1][:-4]) for x in images_list]
-
+        
+        timestamps = [float(a[0].split('/')[-1][:-4]) for a in associations]
         pose_traj_3d = PoseTrajectory3D(positions_xyz=traj_est[:, :3],
                                         orientations_quat_wxyz=traj_est[:, 3:],
-                                        timestamps=np.array(tstamps))
+                                        timestamps=np.array(timestamps))
 
         file_interface.write_tum_trajectory_file(args.output_file, pose_traj_3d)
 
