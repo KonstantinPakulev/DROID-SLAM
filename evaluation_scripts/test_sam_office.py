@@ -122,16 +122,15 @@ if __name__ == '__main__':
 
     traj_est = droid.terminate(image_stream(associations, use_depth=False))
 
-    if args.output_file is not None:
-        from evo.tools import file_interface
-        from evo.core.trajectory import PoseTrajectory3D
-        
-        timestamps = [float(a[0].split('/')[-1][:-4]) for a in associations]
-        pose_traj_3d = PoseTrajectory3D(positions_xyz=traj_est[:, :3],
-                                        orientations_quat_wxyz=traj_est[:, 3:],
-                                        timestamps=np.array(timestamps))
+    from evo.tools import file_interface
+    from evo.core.trajectory import PoseTrajectory3D
 
-        file_interface.write_tum_trajectory_file(args.output_file, pose_traj_3d)
+    timestamps = [float(a[0].split('/')[-1][:-4]) for a in associations]
+    pose_traj_3d = PoseTrajectory3D(positions_xyz=traj_est[:, :3],
+                                    orientations_quat_wxyz=traj_est[:, 3:],
+                                    timestamps=np.array(timestamps))
+
+    file_interface.write_tum_trajectory_file(args.output_file, pose_traj_3d)
 
 
 # image_list = sorted(glob.glob(os.path.join(datapath, 'color', '*.png')))[::stride]
