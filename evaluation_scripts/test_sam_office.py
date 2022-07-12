@@ -107,8 +107,8 @@ if __name__ == '__main__':
     # this can usually be set to 2-3 except for "camera_shake" scenes
     # set to 2 for test scenes
     stride = 2
-
-    associations = read_associations(os.path.join(args.datapath, args.association_file))[::stride]
+    
+    associations = read_associations(args.association_file)[::stride]
 
     for (t, image, depth, intrinsics) in tqdm(image_stream(associations, use_depth=True)):
         if not args.disable_vis:
